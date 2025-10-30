@@ -1,12 +1,14 @@
+variable "name" {
+  type = string
+}
+
 variable "aws_sns_error_topic_arn" {
   type = string
 }
 
-variable "cron_jobs" {
-  type = map(object({
-    commands            = list(string)
-    schedule_expression = string
-  }))
+variable "schedule_expression" {
+    type = string
+    default = null
 }
 
 variable "log_retention" {
@@ -34,11 +36,7 @@ variable "ecs_cluster_arn" {
   type = string
 }
 
-variable "ecs_container_name" {
-  type = string
-}
-
-variable "task_definition_family" {
+variable "task_definition" {
   type = string
 }
 

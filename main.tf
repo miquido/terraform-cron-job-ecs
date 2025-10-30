@@ -2,10 +2,8 @@ data "aws_region" "current" {}
 data "aws_caller_identity" "current" {}
 
 locals {
-  state_machine_name = "${var.environment}-${var.project}-cron-jobs"
-  task_definition    = "arn:aws:ecs:${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}:task-definition/${var.task_definition_family}"
+  state_machine_name = "${var.environment}-${var.project}-${var.name}-cron-jobs"
 }
-
 
 resource "aws_sfn_state_machine" "state_machine" {
   name     = local.state_machine_name
@@ -16,8 +14,7 @@ resource "aws_sfn_state_machine" "state_machine" {
     "subnets" : jsonencode(var.subnet_ids),
     "security_groups" : jsonencode(var.security_group_ids)
     "sns_topic_arn" : var.aws_sns_error_topic_arn
-    "task_definition" : local.task_definition
-    "container_name" : var.ecs_container_name
+    "task_definition" : var.task_definition
   })
 
   logging_configuration {
@@ -25,7 +22,6 @@ resource "aws_sfn_state_machine" "state_machine" {
     include_execution_data = true
     level                  = "ERROR"
   }
-
 }
 
 resource "aws_iam_role" "state_machine" {
@@ -94,7 +90,7 @@ data "aws_iam_policy_document" "role_state_machine" {
     ]
 
     resources = [
-      "${local.task_definition}*"
+      "${var.task_definition}*"
 
     ]
   }
@@ -171,22 +167,19 @@ resource "aws_iam_role_policy" "run_state_machine" {
 #
 
 resource "aws_cloudwatch_event_rule" "cron_job" {
-  for_each            = var.cron_jobs
-  name                = "${local.state_machine_name}-${each.key}"
-  schedule_expression = each.value["schedule_expression"]
-  is_enabled          = true
+  count = var.schedule_expression != null ? 1 : 0
+  name                = "${local.state_machine_name}-${var.name}"
+  schedule_expression = var.schedule_expression
 }
 
 resource "aws_cloudwatch_event_target" "cron_job" {
-  for_each  = var.cron_jobs
-  target_id = "${local.state_machine_name}-${each.key}"
-  rule      = aws_cloudwatch_event_rule.cron_job[each.key].name
+  count = var.schedule_expression != null ? 1 : 0
+  target_id = "${local.state_machine_name}-${var.name}"
+  rule      = aws_cloudwatch_event_rule.cron_job[count.index].name
   arn       = aws_sfn_state_machine.state_machine.arn
   role_arn  = aws_iam_role.run_state_machine.arn
 
-  input = jsonencode({
-    "commands" : each.value["commands"]
-  })
+  input = jsonencode({})
 }
 
 

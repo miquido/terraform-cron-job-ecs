@@ -9,14 +9,6 @@
         "LaunchType": "FARGATE",
         "Cluster": "${cluster_arn}",
         "TaskDefinition": "${task_definition}",
-        "Overrides": {
-                      "ContainerOverrides": [
-                        {
-                          "Name": "${container_name}",
-                          "Command.$": "$.commands"
-                        }
-                      ]
-                    },
         "NetworkConfiguration": {
           "AwsvpcConfiguration": {
           "Subnets": ${subnets},
