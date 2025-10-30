@@ -1,0 +1,58 @@
+{
+  "Comment": "A description of my state machine",
+  "StartAt": "ECS RunTask",
+  "States": {
+    "ECS RunTask": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::ecs:runTask.sync",
+      "Parameters": {
+        "LaunchType": "FARGATE",
+        "Cluster": "${cluster_arn}",
+        "TaskDefinition": "${task_definition}",
+        "Overrides": {
+                      "ContainerOverrides": [
+                        {
+                          "Name": "${container_name}",
+                          "Command.$": "$.commands"
+                        }
+                      ]
+                    },
+        "NetworkConfiguration": {
+          "AwsvpcConfiguration": {
+          "Subnets": ${subnets},
+          "AssignPublicIp": "DISABLED",
+          "SecurityGroups": ${security_groups}
+          }
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "BackoffRate": 2,
+          "IntervalSeconds": 60,
+          "MaxAttempts": 2
+        }
+      ],
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "Next": "Errors SNS Publish"
+        }
+      ],
+      "End": true
+    },
+    "Errors SNS Publish": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::sns:publish",
+      "Parameters": {
+        "Message.$": "$",
+        "TopicArn": "${sns_topic_arn}"
+      },
+      "End": true
+    }
+  }
+}
