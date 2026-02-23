@@ -263,3 +263,27 @@ resource "aws_cloudwatch_event_target" "s3_trigger" {
   }
 }
 
+# Grant ECS task role permission to read from S3 bucket
+data "aws_iam_policy_document" "task_s3_read" {
+  count = var.s3_trigger != null && var.s3_trigger.enabled ? 1 : 0
+
+  statement {
+    actions = [
+      "s3:GetObject",
+      "s3:GetObjectVersion",
+      "s3:ListBucket"
+    ]
+
+    resources = [
+      var.s3_trigger.bucket_arn,
+      "${var.s3_trigger.bucket_arn}/*"
+    ]
+  }
+}
+
+resource "aws_iam_role_policy" "task_s3_read" {
+  count  = var.s3_trigger != null && var.s3_trigger.enabled && var.s3_trigger.task_role_name != null ? 1 : 0
+  name   = "${local.state_machine_name}-task-s3-read"
+  policy = data.aws_iam_policy_document.task_s3_read[0].json
+  role   = var.s3_trigger.task_role_name
+}

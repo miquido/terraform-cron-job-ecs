@@ -53,20 +53,15 @@ variable "container_name" {
   description = "Name of the container in the task definition to run"
 }
 
-variable "task_role_name" {
-  type        = string
-  default     = null
-  description = "Name of the ECS task role (required if s3_trigger is enabled and you want to attach S3 permissions automatically)"
-}
-
 variable "s3_trigger" {
   type = object({
-    enabled       = bool
-    bucket_name   = string
-    bucket_arn    = string
-    filter_prefix = optional(string, "")
-    filter_suffix = optional(string, "")
+    enabled        = bool
+    bucket_name    = string
+    bucket_arn     = string
+    filter_prefix  = optional(string, "")
+    filter_suffix  = optional(string, "")
+    task_role_name = optional(string, null)
   })
   default     = null
-  description = "S3 trigger configuration. If provided, will trigger the state machine on S3 object creation events."
+  description = "S3 trigger configuration. If provided, will trigger the state machine on S3 object creation events. task_role_name is required if you want to attach S3 read permissions automatically to the ECS task role."
 }
