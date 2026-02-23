@@ -15,6 +15,23 @@
           "AssignPublicIp": "DISABLED",
           "SecurityGroups": ${security_groups}
           }
+        },
+        "Overrides": {
+          "ContainerOverrides": [
+            {
+              "Name": "${container_name}",
+              "Environment": [
+                {
+                  "Name": "S3_BUCKET",
+                  "Value.$": "$.s3Bucket"
+                },
+                {
+                  "Name": "S3_KEY",
+                  "Value.$": "$.s3Key"
+                }
+              ]
+            }
+          ]
         }
       },
       "Retry": [
@@ -48,3 +65,4 @@
     }
   }
 }
+

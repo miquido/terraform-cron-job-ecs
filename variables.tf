@@ -9,6 +9,7 @@ variable "aws_sns_error_topic_arn" {
 variable "schedule_expression" {
     type = string
     default = null
+    description = "Cron schedule expression for triggering the state machine. Cannot be used together with s3_trigger."
 }
 
 variable "log_retention" {
@@ -48,20 +49,15 @@ variable "task_exec_role_arn" {
   type = string
 }
 
-variable "container_name" {
-  type        = string
-  description = "Name of the container in the task definition to run"
-}
-
 variable "s3_trigger" {
   type = object({
-    enabled        = bool
     bucket_name    = string
     bucket_arn     = string
     filter_prefix  = optional(string, "")
     filter_suffix  = optional(string, "")
     task_role_name = optional(string, null)
+    container_name = string
   })
   default     = null
-  description = "S3 trigger configuration. If provided, will trigger the state machine on S3 object creation events. task_role_name is required if you want to attach S3 read permissions automatically to the ECS task role."
+  description = "S3 trigger configuration. If provided, will trigger the state machine on S3 object creation events. task_role_name is required if you want to attach S3 read permissions automatically to the ECS task role. container_name is the name of the container in the task definition that will receive S3 environment variables. Cannot be used together with schedule_expression."
 }

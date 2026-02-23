@@ -9,19 +9,30 @@ resource "aws_sfn_state_machine" "state_machine" {
   name     = local.state_machine_name
   role_arn = aws_iam_role.state_machine.arn
 
-  definition = templatefile("${path.module}/cron_jobs_state_machine.json", {
-    "cluster_arn" : var.ecs_cluster_arn,
-    "subnets" : jsonencode(var.subnet_ids),
-    "security_groups" : jsonencode(var.security_group_ids)
-    "sns_topic_arn" : var.aws_sns_error_topic_arn
-    "task_definition" : var.task_definition
-    "container_name" : var.container_name
-  })
+  definition = templatefile("${path.module}/${var.s3_trigger != null ? "cron_jobs_state_machine_with_s3.json" : "cron_jobs_state_machine.json"}", merge(
+    {
+      "cluster_arn" : var.ecs_cluster_arn,
+      "subnets" : jsonencode(var.subnet_ids),
+      "security_groups" : jsonencode(var.security_group_ids)
+      "sns_topic_arn" : var.aws_sns_error_topic_arn
+      "task_definition" : var.task_definition
+    },
+    var.s3_trigger != null ? {
+      "container_name" : var.s3_trigger.container_name
+    } : {}
+  ))
 
   logging_configuration {
     log_destination        = "${aws_cloudwatch_log_group.state_machine.arn}:*"
     include_execution_data = true
     level                  = "ERROR"
+  }
+
+  lifecycle {
+    precondition {
+      condition     = var.schedule_expression == null || var.s3_trigger == null
+      error_message = "You cannot specify both schedule_expression and s3_trigger at the same time. Choose either cron-based scheduling or S3 event triggering."
+    }
   }
 }
 
@@ -178,11 +189,6 @@ resource "aws_cloudwatch_event_target" "cron_job" {
   rule      = aws_cloudwatch_event_rule.cron_job[count.index].name
   arn       = aws_sfn_state_machine.state_machine.arn
   role_arn  = aws_iam_role.run_state_machine.arn
-
-  input = jsonencode({
-    s3Bucket = ""
-    s3Key    = ""
-  })
 }
 
 ##########################################
@@ -216,14 +222,14 @@ resource "aws_cloudwatch_event_target" "sns" {
 
 # Enable EventBridge notifications on the S3 bucket
 resource "aws_s3_bucket_notification" "eventbridge" {
-  count  = var.s3_trigger != null && var.s3_trigger.enabled ? 1 : 0
+  count  = var.s3_trigger != null ? 1 : 0
   bucket = var.s3_trigger.bucket_name
 
   eventbridge = true
 }
 
 resource "aws_cloudwatch_event_rule" "s3_trigger" {
-  count       = var.s3_trigger != null && var.s3_trigger.enabled ? 1 : 0
+  count       = var.s3_trigger != null ? 1 : 0
   name        = "${local.state_machine_name}-s3-trigger"
   description = "Trigger state machine on S3 object creation"
 
@@ -243,7 +249,7 @@ resource "aws_cloudwatch_event_rule" "s3_trigger" {
 }
 
 resource "aws_cloudwatch_event_target" "s3_trigger" {
-  count     = var.s3_trigger != null && var.s3_trigger.enabled ? 1 : 0
+  count     = var.s3_trigger != null ? 1 : 0
   target_id = "${local.state_machine_name}-s3-trigger"
   rule      = aws_cloudwatch_event_rule.s3_trigger[count.index].name
   arn       = aws_sfn_state_machine.state_machine.arn
@@ -265,7 +271,7 @@ resource "aws_cloudwatch_event_target" "s3_trigger" {
 
 # Grant ECS task role permission to read from S3 bucket
 data "aws_iam_policy_document" "task_s3_read" {
-  count = var.s3_trigger != null && var.s3_trigger.enabled ? 1 : 0
+  count = var.s3_trigger != null ? 1 : 0
 
   statement {
     actions = [
@@ -282,7 +288,7 @@ data "aws_iam_policy_document" "task_s3_read" {
 }
 
 resource "aws_iam_role_policy" "task_s3_read" {
-  count  = var.s3_trigger != null && var.s3_trigger.enabled && var.s3_trigger.task_role_name != null ? 1 : 0
+  count  = var.s3_trigger != null ? 1 : 0
   name   = "${local.state_machine_name}-task-s3-read"
   policy = data.aws_iam_policy_document.task_s3_read[0].json
   role   = var.s3_trigger.task_role_name
