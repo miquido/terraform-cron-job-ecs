@@ -15,6 +15,7 @@ resource "aws_sfn_state_machine" "state_machine" {
     "security_groups" : jsonencode(var.security_group_ids)
     "sns_topic_arn" : var.aws_sns_error_topic_arn
     "task_definition" : var.task_definition
+    "container_name" : var.container_name
   })
 
   logging_configuration {
@@ -164,7 +165,6 @@ resource "aws_iam_role_policy" "run_state_machine" {
   policy = data.aws_iam_policy_document.role_run_state_machine.json
   role   = aws_iam_role.run_state_machine.id
 }
-#
 
 resource "aws_cloudwatch_event_rule" "cron_job" {
   count = var.schedule_expression != null ? 1 : 0
@@ -179,9 +179,11 @@ resource "aws_cloudwatch_event_target" "cron_job" {
   arn       = aws_sfn_state_machine.state_machine.arn
   role_arn  = aws_iam_role.run_state_machine.arn
 
-  input = jsonencode({})
+  input = jsonencode({
+    s3Bucket = ""
+    s3Key    = ""
+  })
 }
-
 
 ##########################################
 # NOTIFY WHEN STEP FUNCTION FAILS
@@ -205,5 +207,59 @@ resource "aws_cloudwatch_event_target" "sns" {
   target_id = "${local.state_machine_name}-sns-on-failure"
   rule      = aws_cloudwatch_event_rule.send_sns_on_step_function_failure.name
   arn       = var.aws_sns_error_topic_arn
+}
+
+
+##########################################
+# S3 TRIGGER
+##########################################
+
+# Enable EventBridge notifications on the S3 bucket
+resource "aws_s3_bucket_notification" "eventbridge" {
+  count  = var.s3_trigger != null && var.s3_trigger.enabled ? 1 : 0
+  bucket = var.s3_trigger.bucket_name
+
+  eventbridge = true
+}
+
+resource "aws_cloudwatch_event_rule" "s3_trigger" {
+  count       = var.s3_trigger != null && var.s3_trigger.enabled ? 1 : 0
+  name        = "${local.state_machine_name}-s3-trigger"
+  description = "Trigger state machine on S3 object creation"
+
+  event_pattern = jsonencode({
+    source      = ["aws.s3"]
+    detail-type = ["Object Created"]
+    detail = {
+      bucket = {
+        name = [var.s3_trigger.bucket_name]
+      }
+      object = merge(
+        var.s3_trigger.filter_prefix != "" ? { key = [{ prefix = var.s3_trigger.filter_prefix }] } : {},
+        var.s3_trigger.filter_suffix != "" ? { key = [{ suffix = var.s3_trigger.filter_suffix }] } : {}
+      )
+    }
+  })
+}
+
+resource "aws_cloudwatch_event_target" "s3_trigger" {
+  count     = var.s3_trigger != null && var.s3_trigger.enabled ? 1 : 0
+  target_id = "${local.state_machine_name}-s3-trigger"
+  rule      = aws_cloudwatch_event_rule.s3_trigger[count.index].name
+  arn       = aws_sfn_state_machine.state_machine.arn
+  role_arn  = aws_iam_role.run_state_machine.arn
+
+  input_transformer {
+    input_paths = {
+      bucket = "$.detail.bucket.name"
+      key    = "$.detail.object.key"
+    }
+    input_template = <<-EOT
+    {
+      "s3Bucket": <bucket>,
+      "s3Key": <key>
+    }
+    EOT
+  }
 }
 
