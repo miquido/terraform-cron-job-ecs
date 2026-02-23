@@ -1,0 +1,68 @@
+{
+  "Comment": "A description of my state machine",
+  "StartAt": "ECS RunTask",
+  "States": {
+    "ECS RunTask": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::ecs:runTask.sync",
+      "Parameters": {
+        "LaunchType": "FARGATE",
+        "Cluster": "${cluster_arn}",
+        "TaskDefinition": "${task_definition}",
+        "NetworkConfiguration": {
+          "AwsvpcConfiguration": {
+          "Subnets": ${subnets},
+          "AssignPublicIp": "DISABLED",
+          "SecurityGroups": ${security_groups}
+          }
+        },
+        "Overrides": {
+          "ContainerOverrides": [
+            {
+              "Name": "${container_name}",
+              "Environment": [
+                {
+                  "Name": "S3_BUCKET",
+                  "Value.$": "$.s3Bucket"
+                },
+                {
+                  "Name": "S3_KEY",
+                  "Value.$": "$.s3Key"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "BackoffRate": 2,
+          "IntervalSeconds": 60,
+          "MaxAttempts": 2
+        }
+      ],
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "Next": "Errors SNS Publish"
+        }
+      ],
+      "End": true
+    },
+    "Errors SNS Publish": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::sns:publish",
+      "Parameters": {
+        "Message.$": "$",
+        "TopicArn": "${sns_topic_arn}"
+      },
+      "End": true
+    }
+  }
+}
+
