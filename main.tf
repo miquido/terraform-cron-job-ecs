@@ -178,13 +178,13 @@ resource "aws_iam_role_policy" "run_state_machine" {
 }
 
 resource "aws_cloudwatch_event_rule" "cron_job" {
-  count = var.schedule_expression != null ? 1 : 0
+  count               = var.schedule_expression != null ? 1 : 0
   name                = "${local.state_machine_name}-${var.name}"
   schedule_expression = var.schedule_expression
 }
 
 resource "aws_cloudwatch_event_target" "cron_job" {
-  count = var.schedule_expression != null ? 1 : 0
+  count     = var.schedule_expression != null ? 1 : 0
   target_id = "${local.state_machine_name}-${var.name}"
   rule      = aws_cloudwatch_event_rule.cron_job[count.index].name
   arn       = aws_sfn_state_machine.state_machine.arn

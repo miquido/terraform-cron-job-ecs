@@ -7,13 +7,13 @@ variable "aws_sns_error_topic_arn" {
 }
 
 variable "schedule_expression" {
-    type = string
-    default = null
-    description = "Cron schedule expression for triggering the state machine. Cannot be used together with s3_trigger."
+  type        = string
+  default     = null
+  description = "Cron schedule expression for triggering the state machine. Cannot be used together with s3_trigger."
 }
 
 variable "log_retention" {
-  type = string
+  type    = string
   default = 30
 }
 
