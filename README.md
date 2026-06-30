@@ -96,7 +96,7 @@ No modules.
 
 | Name | Description |
 | ---- | ----------- |
-| <a name="output_state_machine_arn"></a> [state\_machine\_arn](#output\_state\_machine\_arn) | n/a |
+| <a name="output_state_machine_arn"></a> [state\_machine\_arn](#output\_state\_machine\_arn) | ARN of the Step Functions state machine. |
 <!-- END_TF_DOCS -->
 
 ## License
