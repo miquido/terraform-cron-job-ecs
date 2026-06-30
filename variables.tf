@@ -1,9 +1,11 @@
 variable "name" {
-  type = string
+  type        = string
+  description = "Name of the cron job. Used as part of the state machine and IAM resource names."
 }
 
 variable "aws_sns_error_topic_arn" {
-  type = string
+  type        = string
+  description = "ARN of the SNS topic to notify when the Step Functions execution fails."
 }
 
 variable "schedule_expression" {
@@ -13,40 +15,49 @@ variable "schedule_expression" {
 }
 
 variable "log_retention" {
-  type    = string
-  default = 30
+  type        = string
+  default     = 30
+  description = "Number of days to retain CloudWatch logs for the state machine."
 }
 
 variable "environment" {
-  type = string
+  type        = string
+  description = "Environment name (e.g. staging, production). Used as part of resource names."
 }
 
 variable "project" {
-  type = string
+  type        = string
+  description = "Project name. Used as part of resource names."
 }
 
 variable "subnet_ids" {
-  type = list(string)
+  type        = list(string)
+  description = "List of subnet IDs in which the ECS task will run."
 }
 
 variable "security_group_ids" {
-  type = list(string)
+  type        = list(string)
+  description = "List of security group IDs to attach to the ECS task."
 }
 
 variable "ecs_cluster_arn" {
-  type = string
+  type        = string
+  description = "ARN of the ECS cluster where the task will be executed."
 }
 
 variable "task_definition" {
-  type = string
+  type        = string
+  description = "ARN of the ECS task definition to run."
 }
 
 variable "task_role_arn" {
-  type = string
+  type        = string
+  description = "ARN of the IAM role assumed by the ECS task."
 }
 
 variable "task_exec_role_arn" {
-  type = string
+  type        = string
+  description = "ARN of the ECS task execution role (used by the ECS agent to pull images and publish logs)."
 }
 
 variable "s3_trigger" {

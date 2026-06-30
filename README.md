@@ -78,19 +78,19 @@ No modules.
 
 | Name | Description | Type | Default | Required |
 | ---- | ----------- | ---- | ------- | :------: |
-| <a name="input_aws_sns_error_topic_arn"></a> [aws\_sns\_error\_topic\_arn](#input\_aws\_sns\_error\_topic\_arn) | n/a | `string` | n/a | yes |
-| <a name="input_ecs_cluster_arn"></a> [ecs\_cluster\_arn](#input\_ecs\_cluster\_arn) | n/a | `string` | n/a | yes |
-| <a name="input_environment"></a> [environment](#input\_environment) | n/a | `string` | n/a | yes |
-| <a name="input_log_retention"></a> [log\_retention](#input\_log\_retention) | n/a | `string` | `30` | no |
-| <a name="input_name"></a> [name](#input\_name) | n/a | `string` | n/a | yes |
-| <a name="input_project"></a> [project](#input\_project) | n/a | `string` | n/a | yes |
+| <a name="input_aws_sns_error_topic_arn"></a> [aws\_sns\_error\_topic\_arn](#input\_aws\_sns\_error\_topic\_arn) | ARN of the SNS topic to notify when the Step Functions execution fails. | `string` | n/a | yes |
+| <a name="input_ecs_cluster_arn"></a> [ecs\_cluster\_arn](#input\_ecs\_cluster\_arn) | ARN of the ECS cluster where the task will be executed. | `string` | n/a | yes |
+| <a name="input_environment"></a> [environment](#input\_environment) | Environment name (e.g. staging, production). Used as part of resource names. | `string` | n/a | yes |
+| <a name="input_log_retention"></a> [log\_retention](#input\_log\_retention) | Number of days to retain CloudWatch logs for the state machine. | `string` | `30` | no |
+| <a name="input_name"></a> [name](#input\_name) | Name of the cron job. Used as part of the state machine and IAM resource names. | `string` | n/a | yes |
+| <a name="input_project"></a> [project](#input\_project) | Project name. Used as part of resource names. | `string` | n/a | yes |
 | <a name="input_s3_trigger"></a> [s3\_trigger](#input\_s3\_trigger) | S3 trigger configuration. If provided, will trigger the state machine on S3 object creation events. task\_role\_name is required if you want to attach S3 read permissions automatically to the ECS task role. container\_name is the name of the container in the task definition that will receive S3 environment variables. Cannot be used together with schedule\_expression. | <pre>object({<br/>    bucket_name    = string<br/>    bucket_arn     = string<br/>    filter_prefix  = optional(string, "")<br/>    filter_suffix  = optional(string, "")<br/>    task_role_name = optional(string, null)<br/>    container_name = string<br/>  })</pre> | `null` | no |
 | <a name="input_schedule_expression"></a> [schedule\_expression](#input\_schedule\_expression) | Cron schedule expression for triggering the state machine. Cannot be used together with s3\_trigger. | `string` | `null` | no |
-| <a name="input_security_group_ids"></a> [security\_group\_ids](#input\_security\_group\_ids) | n/a | `list(string)` | n/a | yes |
-| <a name="input_subnet_ids"></a> [subnet\_ids](#input\_subnet\_ids) | n/a | `list(string)` | n/a | yes |
-| <a name="input_task_definition"></a> [task\_definition](#input\_task\_definition) | n/a | `string` | n/a | yes |
-| <a name="input_task_exec_role_arn"></a> [task\_exec\_role\_arn](#input\_task\_exec\_role\_arn) | n/a | `string` | n/a | yes |
-| <a name="input_task_role_arn"></a> [task\_role\_arn](#input\_task\_role\_arn) | n/a | `string` | n/a | yes |
+| <a name="input_security_group_ids"></a> [security\_group\_ids](#input\_security\_group\_ids) | List of security group IDs to attach to the ECS task. | `list(string)` | n/a | yes |
+| <a name="input_subnet_ids"></a> [subnet\_ids](#input\_subnet\_ids) | List of subnet IDs in which the ECS task will run. | `list(string)` | n/a | yes |
+| <a name="input_task_definition"></a> [task\_definition](#input\_task\_definition) | ARN of the ECS task definition to run. | `string` | n/a | yes |
+| <a name="input_task_exec_role_arn"></a> [task\_exec\_role\_arn](#input\_task\_exec\_role\_arn) | ARN of the ECS task execution role (used by the ECS agent to pull images and publish logs). | `string` | n/a | yes |
+| <a name="input_task_role_arn"></a> [task\_role\_arn](#input\_task\_role\_arn) | ARN of the IAM role assumed by the ECS task. | `string` | n/a | yes |
 
 ## Outputs
 
